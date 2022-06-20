@@ -10,32 +10,20 @@ client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGODB_URL"))
 db = client["twatter"]
 
 
-async def get_users(self, token: Union[str, None] = "") -> Schema:
-    is_login = await check_if_loggin(client, token)
+async def search_twaats(search: str, token: Union[str, None] = "") -> Schema:
+    is_login = await check_if_loggin(token)
     if is_login is False:
         return Schema([])
-    result = await db["users"].find().to_list(length=10)
-    users: List[User] = []
-    for document in result:
-        users.append(User(dict=document))
-    return Schema(users=users)
-
-
-async def add_user(user: UserInput, token: Union[str, None] = "") -> User:
-    is_login = await check_if_loggin(client, token)
-    if is_login is False:
-        return User({})
-    data = jsonable_encoder(user)
-    user = await db["users"].find_one(
-        {"$or": [{"username": user.username}, {"email": user.email}]}
+    result = (
+        await db["twaats"]
+        .find({"message": {"$regex": search, "$options": "gmi"}})
+        .to_list(length=100)
     )
-    if user:
-        return User({})
-    insert = await db["users"].insert_one(data)
-    result = await db["users"].find_one({"_id": insert.inserted_id})
-    if result:
-        return User.parse_obj(result)
-    return User({})
+    print(result)
+    twaats: List[Twaat] = []
+    for document in result:
+        twaats.append(Twaat(dict=document))
+    return Schema(twaats=twaats)
 
 
 def echo(self, echo: Union[str, None] = "") -> str:

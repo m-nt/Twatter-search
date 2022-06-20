@@ -2,30 +2,17 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 import time
 import motor
-
-# to get a string like this run:
-# openssl rand -hex 32
-SECRET_KEY = "askjd"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+import os
+from requests import *
+from fastapi.encoders import jsonable_encoder
 
 
-async def check_if_loggin(
-    client: motor.motor_asyncio.AsyncIOMotorClient, token: str
-) -> bool:
-    db = client["twatter"]
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        expire: int = payload.get("exp")
-        if username is None or expire is None:
-            return False
-    except JWTError:
-        return False
-    if expire - time.time() <= 0:
-        return False
-    user_instant = await db["users"].find_one({"username": username})
-    if user_instant is None:
+async def check_if_loggin(token: str) -> bool:
+    # request the auth service for checking
+    data = {"token": token}
+    res = post(url=os.getenv("AUTH_URL") + "token/checklogin", json=data)
+    auth_res = jsonable_encoder(res.text)
+    if "username" not in auth_res:
         return False
     return True
 

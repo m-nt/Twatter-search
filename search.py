@@ -20,18 +20,12 @@ dotenv.load_dotenv()
 
 @strawberry.type
 class Query:
-    results: Schema = strawberry.field(resolver=get_users)
+    results: Schema = strawberry.field(resolver=search_twaats)
     echo: Union[str, None] = strawberry.field(resolver=echo)
     pass
 
 
-@strawberry.type
-class Mutaion:
-    add_user: User = strawberry.field(resolver=add_user)
-    pass
-
-
-schema = strawberry.Schema(Query, mutation=Mutaion)
+schema = strawberry.Schema(Query)
 
 graphql_app = GraphQLRouter(schema)
 
